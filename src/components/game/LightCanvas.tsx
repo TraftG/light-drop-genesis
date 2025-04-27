@@ -1,6 +1,5 @@
-
-import React, { useRef, useEffect } from 'react';
-import { useGame } from './GameContext';
+import React, { useRef, useEffect } from "react";
+import { useGame } from "./GameContext";
 
 const LightCanvas: React.FC = () => {
   const { state, addDrop, getBgColor } = useGame();
@@ -10,22 +9,22 @@ const LightCanvas: React.FC = () => {
   const handleCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = canvasRef.current?.getBoundingClientRect();
     if (!rect) return;
-    
+
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    
+
     addDrop(x, y);
   };
 
   // Update background color based on light level
   useEffect(() => {
     if (canvasRef.current) {
-      canvasRef.current.style.backgroundColor = 'rgb(10, 10, 12)'; // Set a dark background instead of dynamic whitening
+      canvasRef.current.style.backgroundColor = "rgb(10, 10, 12)"; // Set a dark background instead of dynamic whitening
     }
   }, []);
 
   return (
-    <div 
+    <div
       ref={canvasRef}
       className="game-container w-full h-full absolute inset-0 overflow-hidden cursor-pointer"
       onClick={handleCanvasClick}
@@ -33,11 +32,11 @@ const LightCanvas: React.FC = () => {
       {/* SVG layer for connections */}
       <svg className="absolute top-0 left-0 w-full h-full pointer-events-none">
         {state.connections.map((connection, index) => {
-          const fromDrop = state.drops.find(d => d.id === connection.from);
-          const toDrop = state.drops.find(d => d.id === connection.to);
-          
+          const fromDrop = state.drops.find((d) => d.id === connection.from);
+          const toDrop = state.drops.find((d) => d.id === connection.to);
+
           if (!fromDrop || !toDrop) return null;
-          
+
           return (
             <line
               key={`conn-${index}`}
@@ -60,9 +59,9 @@ const LightCanvas: React.FC = () => {
           style={{
             left: `${drop.position.x}px`,
             top: `${drop.position.y}px`,
-            width: '8px',
-            height: '8px',
-            transform: 'translate(-50%, -50%)',
+            width: "8px",
+            height: "8px",
+            transform: "translate(-50%, -50%)",
             opacity: 0.8 + drop.brightness * 0.2,
           }}
         />

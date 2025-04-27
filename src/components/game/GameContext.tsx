@@ -1,5 +1,11 @@
-import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, {
+  createContext,
+  useContext,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
+import { v4 as uuidv4 } from "uuid";
 
 // Define types for our state
 interface Position {
@@ -53,7 +59,9 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 // Create provider component
-export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const GameProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   // Initialize state
   const [state, setState] = useState<GameState>({
     drops: [],
@@ -63,13 +71,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     universeStats: {
       number: 1,
       lightMultiplier: 1.0,
-    }
+    },
   });
 
   // Function to check if position is already taken
   const isPositionTaken = (x: number, y: number): boolean => {
     const threshold = 20; // minimum distance between drops
-    return state.drops.some(drop => {
+    return state.drops.some((drop) => {
       const dx = drop.position.x - x;
       const dy = drop.position.y - y;
       const distance = Math.sqrt(dx * dx + dy * dy);
@@ -91,20 +99,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: Date.now(),
     };
 
-    setState(prevState => {
+    setState((prevState) => {
       // Add the new drop
       const updatedDrops = [...prevState.drops, newDrop];
-      
+
       // Check for connections
       const newConnections = createConnections(updatedDrops, newDrop);
       const updatedConnections = [...prevState.connections, ...newConnections];
-      
+
       // Check for patterns
-      const { newPatterns, earnedLightDust } = checkForPatterns(updatedConnections, prevState.patterns);
-      
+      const { newPatterns, earnedLightDust } = checkForPatterns(
+        updatedConnections,
+        prevState.patterns
+      );
+
       // Update light dust count
-      const updatedLightDust = prevState.lightDust + (earnedLightDust * prevState.universeStats.lightMultiplier);
-      
+      const updatedLightDust =
+        prevState.lightDust +
+        earnedLightDust * prevState.universeStats.lightMultiplier;
+
       return {
         ...prevState,
         drops: updatedDrops,
@@ -116,19 +129,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Function to create connections between drops
-  const createConnections = (drops: LightDrop[], newDrop: LightDrop): Connection[] => {
+  const createConnections = (
+    drops: LightDrop[],
+    newDrop: LightDrop
+  ): Connection[] => {
     const connections: Connection[] = [];
     const MAX_CONNECTION_DISTANCE = 150;
-    
-    drops.forEach(drop => {
+
+    drops.forEach((drop) => {
       if (drop.id === newDrop.id) return;
-      
+
       const dx = drop.position.x - newDrop.position.x;
       const dy = drop.position.y - newDrop.position.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (distance <= MAX_CONNECTION_DISTANCE) {
-        const strength = 1 - (distance / MAX_CONNECTION_DISTANCE);
+        const strength = 1 - distance / MAX_CONNECTION_DISTANCE;
         connections.push({
           id: uuidv4(),
           from: drop.id,
@@ -137,18 +153,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     });
-    
+
     return connections;
   };
 
   // Function to check for patterns
-  const checkForPatterns = (connections: Connection[], existingPatterns: Pattern[]) => {
+  const checkForPatterns = (
+    connections: Connection[],
+    existingPatterns: Pattern[]
+  ) => {
     const newPatterns: Pattern[] = [];
     let earnedLightDust = 0;
-    
+
     // Define pattern detection logic here
     // Triangle pattern
-    if (connections.length >= 3 && existingPatterns.find(p => p.name === "Треугольник") === undefined) {
+    if (
+      connections.length >= 3 &&
+      existingPatterns.find((p) => p.name === "Треугольник") === undefined
+    ) {
       const triangleFound = detectTriangle(connections);
       if (triangleFound.length > 0) {
         newPatterns.push({
@@ -160,9 +182,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         earnedLightDust += 10;
       }
     }
-    
+
     // Square pattern
-    if (connections.length >= 4 && existingPatterns.find(p => p.name === "Квадрат") === undefined) {
+    if (
+      connections.length >= 4 &&
+      existingPatterns.find((p) => p.name === "Квадрат") === undefined
+    ) {
       const squareFound = detectSquare(connections);
       if (squareFound.length > 0) {
         newPatterns.push({
@@ -174,9 +199,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         earnedLightDust += 20;
       }
     }
-    
+
     // Star pattern
-    if (connections.length >= 5 && existingPatterns.find(p => p.name === "Звезда") === undefined) {
+    if (
+      connections.length >= 5 &&
+      existingPatterns.find((p) => p.name === "Звезда") === undefined
+    ) {
       const starFound = detectStar(connections);
       if (starFound.length > 0) {
         newPatterns.push({
@@ -188,7 +216,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         earnedLightDust += 50;
       }
     }
-    
+
     return { newPatterns, earnedLightDust };
   };
 
@@ -204,7 +232,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const detectSquare = (connections: Connection[]): string[] => {
     // Simplified detection
     if (connections.length >= 4) {
-      return [connections[0].id, connections[1].id, connections[2].id, connections[3].id];
+      return [
+        connections[0].id,
+        connections[1].id,
+        connections[2].id,
+        connections[3].id,
+      ];
     }
     return [];
   };
@@ -212,7 +245,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const detectStar = (connections: Connection[]): string[] => {
     // Simplified detection
     if (connections.length >= 5) {
-      return [connections[0].id, connections[1].id, connections[2].id, connections[3].id, connections[4].id];
+      return [
+        connections[0].id,
+        connections[1].id,
+        connections[2].id,
+        connections[3].id,
+        connections[4].id,
+      ];
     }
     return [];
   };
@@ -221,14 +260,15 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const getBgColor = () => {
     const baseColor = 10;
     const maxColor = 30;
-    const lightLevel = Math.min(state.drops.length, 100) / 100;
-    const colorValue = baseColor + Math.floor((maxColor - baseColor) * lightLevel);
+    const lightLevel = Math.min(state.drops.length, 50) / 50;
+    const colorValue =
+      baseColor + Math.floor((maxColor - baseColor) * lightLevel);
     return `rgb(${colorValue}, ${colorValue}, ${colorValue + 5})`;
   };
 
   // Function to create a new universe
   const createNewUniverse = () => {
-    setState(prevState => ({
+    setState((prevState) => ({
       drops: [],
       connections: [],
       patterns: [],
@@ -236,23 +276,23 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       universeStats: {
         number: prevState.universeStats.number + 1,
         lightMultiplier: prevState.universeStats.lightMultiplier + 0.1, // Increase multiplier by 10% per universe
-      }
+      },
     }));
   };
 
   // Check if player can create a new universe
   const canCreateNewUniverse = useCallback(() => {
-    return state.drops.length >= 100;
+    return state.drops.length >= 50;
   }, [state.drops.length]);
 
   return (
-    <GameContext.Provider 
-      value={{ 
-        state, 
-        addDrop, 
+    <GameContext.Provider
+      value={{
+        state,
+        addDrop,
         createNewUniverse,
         canCreateNewUniverse,
-        getBgColor
+        getBgColor,
       }}
     >
       {children}
@@ -264,7 +304,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 export const useGame = () => {
   const context = useContext(GameContext);
   if (context === undefined) {
-    throw new Error('useGame must be used within a GameProvider');
+    throw new Error("useGame must be used within a GameProvider");
   }
   return context;
 };
