@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useReducer, ReactNode, useCallback, useEffect } from 'react';
 import { LightDrop, Connection, Pattern, Constellation } from './models/LightDrop';
 import { toast } from 'sonner';
@@ -109,6 +108,27 @@ interface GameProviderProps {
 
 const CONNECTION_DISTANCE = 150;
 
+const CONSTELLATION_TEMPLATES = {
+  "FirstLight": {
+    name: "Первый Свет",
+    description: "Начало пути света",
+    requiredPatterns: ["spiral", "lotus", "tree"],
+    value: 100
+  },
+  "CosmicFlow": {
+    name: "Космический Поток",
+    description: "Течение энергии между ми��ами",
+    requiredPatterns: ["spiral", "lotus"],
+    value: 150
+  },
+  "EternalGrowth": {
+    name: "Вечный Рост",
+    description: "Непрерывное развитие и трансформация",
+    requiredPatterns: ["tree", "lotus"],
+    value: 200
+  }
+};
+
 export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const [state, dispatch] = useReducer(gameReducer, initialState);
 
@@ -144,7 +164,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     });
   }, [state.drops]);
 
-  // Simple pattern detection (this would be more sophisticated in a full game)
   const checkPatterns = useCallback(() => {
     // Check for simple patterns based on the number of connections
     if (state.connections.length === 5 && !state.discoveredPatterns.includes('spiral')) {
@@ -180,25 +199,42 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       dispatch({ type: 'DISCOVER_PATTERN', pattern });
     }
     
-    // Check if we can form a constellation from discovered patterns
-    if (state.patterns.length >= 3 && state.constellations.length === 0) {
-      const constellation: Constellation = {
-        id: uuidv4(),
-        name: "Первый Свет",
-        patterns: state.patterns.map(p => p.id),
-        value: 100,
-      };
-      dispatch({ type: 'FORM_CONSTELLATION', constellation });
-      dispatch({ type: 'EARN_LIGHT_DUST', amount: 100 });
-    }
+    // Enhanced constellation formation
+    const formConstellation = () => {
+      const discoveredPatternIds = state.patterns.map(p => p.id);
+      
+      const availableConstellation = Object.entries(CONSTELLATION_TEMPLATES).find(
+        ([_, template]) => template.requiredPatterns.every(
+          requiredPattern => discoveredPatternIds.includes(requiredPattern)
+        )
+      );
+
+      if (availableConstellation && state.constellations.length === 0) {
+        const [constellationKey, constellationTemplate] = availableConstellation;
+        
+        const constellation: Constellation = {
+          id: uuidv4(),
+          name: constellationTemplate.name,
+          patterns: constellationTemplate.requiredPatterns,
+          value: constellationTemplate.value
+        };
+
+        dispatch({ type: 'FORM_CONSTELLATION', constellation });
+        dispatch({ type: 'EARN_LIGHT_DUST', amount: constellation.value });
+
+        toast(`Создано созвездие: ${constellation.name}`, {
+          description: `Новый узор объединил ${constellationTemplate.requiredPatterns.join(", ")}`
+        });
+      }
+    };
+
+    formConstellation();
   }, [state.connections, state.patterns, state.constellations, state.discoveredPatterns]);
 
-  // Run pattern check when connections change
   useEffect(() => {
     checkPatterns();
   }, [state.connections.length, checkPatterns]);
 
-  // Calculate background color based on light level
   const getBgColor = useCallback(() => {
     const lightValue = Math.floor((state.lightLevel / 100) * 25); // Max 25% brightness
     return `rgb(${lightValue}, ${lightValue}, ${Math.floor(lightValue * 1.2)})`;
