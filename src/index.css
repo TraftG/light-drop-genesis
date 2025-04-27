@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,19 +36,12 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
@@ -98,4 +92,44 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Game specific styles */
+.light-drop {
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8));
+  transition: all 0.3s ease;
+}
+
+.light-drop:hover {
+  filter: drop-shadow(0 0 12px rgba(255, 255, 255, 1));
+}
+
+.light-connection {
+  stroke: rgba(255, 255, 255, 0.3);
+  stroke-width: 1;
+  transition: all 0.3s ease;
+}
+
+.light-connection:hover {
+  stroke: rgba(255, 255, 255, 0.6);
+}
+
+@keyframes appear {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.drop-appear {
+  animation: appear 0.5s ease-out forwards;
+}
+
+.game-container {
+  background: rgb(0, 0, 0);
+  transition: background-color 1s ease-out;
 }
