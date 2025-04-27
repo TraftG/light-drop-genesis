@@ -20,9 +20,9 @@ const LightCanvas: React.FC = () => {
   // Update background color based on light level
   useEffect(() => {
     if (canvasRef.current) {
-      canvasRef.current.style.backgroundColor = getBgColor();
+      canvasRef.current.style.backgroundColor = 'rgb(10, 10, 12)'; // Set a dark background instead of dynamic whitening
     }
-  }, [getBgColor]);
+  }, []);
 
   return (
     <div 

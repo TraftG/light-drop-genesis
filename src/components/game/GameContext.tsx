@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useCallback, useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -67,8 +66,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
+  // Function to check if position is already taken
+  const isPositionTaken = (x: number, y: number): boolean => {
+    const threshold = 20; // minimum distance between drops
+    return state.drops.some(drop => {
+      const dx = drop.position.x - x;
+      const dy = drop.position.y - y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      return distance < threshold;
+    });
+  };
+
   // Function to add a new light drop
   const addDrop = (x: number, y: number) => {
+    // Check if position is already taken
+    if (isPositionTaken(x, y)) {
+      return; // Don't add a drop if position is taken
+    }
+
     const newDrop: LightDrop = {
       id: uuidv4(),
       position: { x, y },
