@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useReducer, ReactNode, useCallback, useEffect } from 'react';
-import { LightDrop, Connection, Pattern, Constellation } from './models/LightDrop';
+import { LightDrop, Connection, Pattern, Constellation, UniverseStats } from './models/LightDrop';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { PatternTemplates } from './models/LightDrop';
@@ -12,6 +12,7 @@ interface GameState {
   lightLevel: number;
   lightDust: number;
   discoveredPatterns: string[];
+  universeStats: UniverseStats;
 }
 
 type GameAction =
@@ -20,7 +21,8 @@ type GameAction =
   | { type: 'DISCOVER_PATTERN'; pattern: Pattern }
   | { type: 'FORM_CONSTELLATION'; constellation: Constellation }
   | { type: 'INCREASE_LIGHT_LEVEL'; amount: number }
-  | { type: 'EARN_LIGHT_DUST'; amount: number };
+  | { type: 'EARN_LIGHT_DUST'; amount: number }
+  | { type: 'CREATE_NEW_UNIVERSE' };
 
 const initialState: GameState = {
   drops: [],
@@ -30,6 +32,10 @@ const initialState: GameState = {
   lightLevel: 0,
   lightDust: 0,
   discoveredPatterns: [],
+  universeStats: {
+    number: 1,
+    lightMultiplier: 1
+  }
 };
 
 function gameReducer(state: GameState, action: GameAction): GameState {
@@ -41,7 +47,6 @@ function gameReducer(state: GameState, action: GameAction): GameState {
       };
 
     case 'CONNECT_DROPS':
-      // Don't add duplicate connections
       const connectionExists = state.connections.some(
         conn => (conn.from === action.connection.from && conn.to === action.connection.to) ||
                (conn.from === action.connection.to && conn.to === action.connection.from)
@@ -88,6 +93,22 @@ function gameReducer(state: GameState, action: GameAction): GameState {
         lightDust: state.lightDust + action.amount,
       };
 
+    case 'CREATE_NEW_UNIVERSE':
+      const nextUniverseNumber = state.universeStats.number + 1;
+      const newMultiplier = 1 + (nextUniverseNumber - 1) * 0.1; // +10% per universe
+      
+      toast(`Создана новая Вселенная #${nextUniverseNumber}`, {
+        description: `Множитель света: +${Math.floor((newMultiplier - 1) * 100)}%`
+      });
+      
+      return {
+        ...initialState,
+        universeStats: {
+          number: nextUniverseNumber,
+          lightMultiplier: newMultiplier
+        }
+      };
+
     default:
       return state;
   }
@@ -98,6 +119,8 @@ interface GameContextType {
   addDrop: (x: number, y: number) => void;
   checkPatterns: () => void;
   getBgColor: () => string;
+  createNewUniverse: () => void;
+  canCreateNewUniverse: () => boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -137,17 +160,19 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       id: uuidv4(),
       position: { x, y },
       createdAt: Date.now(),
-      brightness: 1,
+      brightness: state.universeStats.lightMultiplier,
     };
     
     dispatch({ type: 'ADD_DROP', drop: newDrop });
-    dispatch({ type: 'EARN_LIGHT_DUST', amount: 1 });
+    dispatch({ type: 'EARN_LIGHT_DUST', amount: 1 * state.universeStats.lightMultiplier });
     
     if (state.drops.length > 0) {
-      dispatch({ type: 'INCREASE_LIGHT_LEVEL', amount: 0.2 });
+      dispatch({ 
+        type: 'INCREASE_LIGHT_LEVEL', 
+        amount: 0.2 * state.universeStats.lightMultiplier 
+      });
     }
     
-    // After adding a new drop, check for possible connections
     state.drops.forEach(existingDrop => {
       const dx = existingDrop.position.x - newDrop.position.x;
       const dy = existingDrop.position.y - newDrop.position.y;
@@ -157,15 +182,22 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
         const connection: Connection = {
           from: existingDrop.id,
           to: newDrop.id,
-          strength: 1 - distance / CONNECTION_DISTANCE, // Higher strength for closer drops
+          strength: 1 - distance / CONNECTION_DISTANCE,
         };
         dispatch({ type: 'CONNECT_DROPS', connection });
       }
     });
-  }, [state.drops]);
+  }, [state.drops, state.universeStats.lightMultiplier]);
+
+  const createNewUniverse = useCallback(() => {
+    dispatch({ type: 'CREATE_NEW_UNIVERSE' });
+  }, []);
+
+  const canCreateNewUniverse = useCallback(() => {
+    return state.drops.length >= 1000;
+  }, [state.drops.length]);
 
   const checkPatterns = useCallback(() => {
-    // Check for simple patterns based on the number of connections
     if (state.connections.length === 5 && !state.discoveredPatterns.includes('spiral')) {
       const pattern: Pattern = {
         id: 'spiral',
@@ -199,7 +231,6 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       dispatch({ type: 'DISCOVER_PATTERN', pattern });
     }
     
-    // Enhanced constellation formation
     const formConstellation = () => {
       const discoveredPatternIds = state.patterns.map(p => p.id);
       
@@ -236,12 +267,19 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   }, [state.connections.length, checkPatterns]);
 
   const getBgColor = useCallback(() => {
-    const lightValue = Math.floor((state.lightLevel / 100) * 25); // Max 25% brightness
+    const lightValue = Math.floor((state.lightLevel / 100) * 25);
     return `rgb(${lightValue}, ${lightValue}, ${Math.floor(lightValue * 1.2)})`;
   }, [state.lightLevel]);
 
   return (
-    <GameContext.Provider value={{ state, addDrop, checkPatterns, getBgColor }}>
+    <GameContext.Provider value={{ 
+      state, 
+      addDrop, 
+      checkPatterns, 
+      getBgColor,
+      createNewUniverse,
+      canCreateNewUniverse 
+    }}>
       {children}
     </GameContext.Provider>
   );

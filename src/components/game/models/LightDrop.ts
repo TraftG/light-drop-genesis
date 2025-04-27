@@ -1,4 +1,3 @@
-
 export interface Position {
   x: number;
   y: number;
@@ -44,5 +43,10 @@ export const PatternTemplates: Record<string, { name: string, description: strin
   "tree": {
     name: "Древо",
     description: "Соединение миров, корни и крона.",
-  },
+  }
+}
+
+export interface UniverseStats {
+  number: number;
+  lightMultiplier: number;
 }
